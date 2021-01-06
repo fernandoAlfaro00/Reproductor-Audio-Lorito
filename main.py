@@ -1,6 +1,12 @@
-from vista.abrir import AbrirArchivos
+from colorama import  init , Fore
+from vista.ventana_principal import VentanaPrincipal
+
+
 
 if __name__ == "__main__":
 
-    ar = AbrirArchivos()
-    print("empezando Ejecucion")
+    init()
+    print(Fore.GREEN+"Empezando ejecución")
+    ar = VentanaPrincipal()
+    print(Fore.RED+"Termino la ejecución")
+    

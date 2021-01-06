@@ -1,6 +1,8 @@
 import pygame
 import os 
 
+
+#TODO:Mejorar el nombre la clases
 class Reproductor():
     
     

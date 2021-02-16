@@ -40,6 +40,11 @@ class VentanaPrincipal(tk.Frame):
         self.frame_btn.grid(column=0, row=2)
         self.frame_btn.configure(width=400 , height=50)
 
+        #Frame de listado de pistas
+        self.frame_track = tk.Frame(self, bg="lightblue")
+        self.frame_track.config(bd=10 )
+        self.frame_track.grid(column=1, row=0, sticky ='NWSE'  )
+
 
 
         # Titulo de la pista
@@ -60,7 +65,7 @@ class VentanaPrincipal(tk.Frame):
         self.after(0, self.update_time, 0)
         self.after(0, self.update_frame, 0)
 
-        # self.componentes_listado_track()
+        self.componentes_listado_track()
 
 
     def crear_menu(self):
@@ -93,9 +98,9 @@ class VentanaPrincipal(tk.Frame):
         
         # asignar Botones a frame
         self.btn_forget = tk.Button(
-            self.frame_btn, text="Ocultar", command=lambda: self.frame_track.grid_remove())
+            self.frame_btn, text="Ocultar", command=self.ocultar_lista)
         self.btn_Recover = tk.Button(
-            self.frame_btn, text="mostrar", command=lambda: self.frame_track.grid())
+            self.frame_btn, text="Mostrar", command=self.mostrar_lista)
         self.btn_play = ttk.Button(
             self.frame_btn, text="Play", command=self.play, style='W.TButton')
         self.btn_next = ttk.Button(
@@ -111,26 +116,38 @@ class VentanaPrincipal(tk.Frame):
         self.btn_previous.grid(column=1, row=2)
         self.btn_pause.grid(column=2, row=3)
         self.btn_forget.grid(column=3, row=3)
-        # self.btn_Recover.grid(column=2, row=3)
+
+
+    def mostrar_lista(self):
+        self.btn_Recover.grid_remove()
+        self.btn_forget.grid(column=3, row=3)
+        self.frame_track.grid()
+        
+    
+    def ocultar_lista(self):
+        self.btn_forget.grid_remove()
+        self.btn_Recover.grid(column=3, row=3)
+        self.frame_track.grid_remove()
+        
+
+        
 
     def componentes_listado_track(self):
 
         # TODO:Ver para que servia esta linea -- creo que era para actualizar la ventana con el objecivo de mover al lorito.
 
-        self.frame_track = tk.Frame(self, bg="lightblue")
-        self.frame_track.config(bd=10 )
-        self.frame_track.grid(column=7, row=0, sticky ='NW'  )
+        
        
         # listado para las pistas
         self.listbox = tk.Listbox(self.frame_track, relief="flat")
         self.listbox.bind('<<ListboxSelect>>', self.recuperar)
         self.listbox.configure( width=50)
-        self.listbox.grid(column=1, row=0 )
+        self.listbox.grid(column=0, row=0 )
 
         # parte de scroll
         self.scroll = tk.Scrollbar(self.frame_track, orient=tk.VERTICAL)
         self.scroll.configure(command=self.listbox.yview)
-        self.scroll.grid(column=2, row=0 , rowspan=2 )
+        self.scroll.grid(column=1, row=0  , sticky="NS")
         
 
     def update_frame(self, ind):

@@ -1,62 +1,87 @@
 from tkinter import filedialog, ttk
 import tkinter as tk
+import tkinter.font as tkFont
 import os
-from reproductor.audio import Reproductor
 
 
 class VentanaPrincipal(tk.Frame):
 
-    def __init__(self, master=None):
+    def __init__(self, master=None , rep=None ):
 
         super().__init__(master)
         self.master = master
-        self.crear_componentes()
-        self.reproductor = Reproductor()
-
-     # TODO:mejorar implementación de los grid
-    def crear_componentes(self):
-
-        #barra superior (menu)
-        self.crear_menu()
-
-        #Creación de frame
-        #frame principal
         self.configure(background='white')
         self.grid(padx=8, pady=8)
-        self.bind_all("<Control-o>", self.cambiar)
-        #Frame de imagen lorito
-        self.label_img = tk.Label(self)
-        self.label_img.grid(column=0, row=0 )
-        self.label_img.configure(width=400 , height=400)
 
-        #Frame titulo y tiempo
+
+        self.crear_componentes()
+        self.dar_estilo()
+        self.reproductor = rep
+        self.listado_pista = []
+
+
+        
+    def set_titulo(self, texto):
+
+        self.label_titulo.config(text=texto)
+
+    def crear_menu(self):
+
+        self.menubar = tk.Menu(self.master)
+        self.opciones = tk.Menu(self.menubar, tearoff=0)
+        self.master.config(menu=self.menubar)
+        self.opciones.add_command(label="Abrir audio",
+                                  command=self.abrir_archivo,
+                                  accelerator="Ctrl+O"
+                                  )
+        self.menubar.add_cascade(label="Abrir", menu=self.opciones)
+        self.bind_all("<Control-o>", self.combinacion_teclas)
+        
+        menu_font = ("Helvetica",16,"bold")
+        self.menubar.configure( font=menu_font)
+        self.opciones.configure(font=menu_font)
+
+        
+
+      
+      
+
+
+    def crear_componentes(self):
+
+       
+        self.crear_menu()
+
+        # Creación de frame y elemento padres(?
         self.frame_info = tk.Frame(self)
-        self.frame_info.grid(column=0, row = 1 )
-        self.frame_info.configure(width=400 , height= 10  , background="blue" )
-
-        # Frame de botones
         self.frame_btn = tk.Frame(self)
-        self.frame_btn.configure(background="yellow")
-        self.frame_btn.grid(column=0, row=2)
-        self.frame_btn.configure(width=400 , height=50)
-
-        #Frame de listado de pistas
         self.frame_track = tk.Frame(self, bg="lightblue")
-        self.frame_track.config(bd=10 )
-        self.frame_track.grid(column=1, row=0, sticky ='NWSE'  )
+        self.label_img = tk.Label(self)
 
+        #grid 
+        self.frame_info.grid(column=0, row=1)
+        self.frame_btn.grid(column=0, row=2)
+        self.frame_track.grid(column=1, row=0, sticky='NWSE')
+        self.label_img.grid(column=0, row=0)
 
+        #configure
+        self.frame_info.configure(width=400, height=10, background="blue")
+        self.frame_btn.configure(background="yellow", width=400, height=50)
+        self.label_img.configure(width=400, height=400)
+        self.frame_track.configure(bd=10)
 
-        # Titulo de la pista
-        self.label_titulo = tk.Label(self.frame_info, text='-----')
-        self.label_titulo.grid( row=0)
-
-        # Tiempo de duracion de la pista
         self.label_time = tk.Label(self.frame_info, text="0")
-        self.label_time.grid( row=1)
-   
+        self.label_titulo = tk.Label(self.frame_info, text='-----')
+        self.label_titulo.grid(row=0)
+        self.label_time.grid(row=1)
 
-        self.crear_componentes_reproductor()
+
+ 
+
+
+
+     
+
         # imagen
         self.frames = [tk.PhotoImage(
             file='imagenes/nofunciona.gif', format='gif -index %i' % (i)) for i in range(40)]
@@ -65,37 +90,31 @@ class VentanaPrincipal(tk.Frame):
         self.after(0, self.update_time, 0)
         self.after(0, self.update_frame, 0)
 
+        self.crear_componentes_reproductor()
         self.componentes_listado_track()
 
+    def dar_estilo(self):
 
-    def crear_menu(self):
+         # Estilo de los botones
+        estilo_botones = ttk.Style()
 
-        # Menu
-        self.menubar = tk.Menu(self.master)
-        self.master.config(menu=self.menubar)
-        self.opciones = tk.Menu(self.menubar, tearoff=0)
-        self.opciones.add_command(label="Abrir audio",
-                                  command=self.abrir_archivo,
-                                  accelerator="Ctrl+O"
-                                  )
-        self.menubar.add_cascade(label="Abrir", menu=self.opciones)
-
-    def crear_componentes_reproductor(self):
-
-
-
-        #Estilo de los botones
-        style = ttk.Style()
-
-
-        style.configure("W.TButton", background='black',
+        estilo_botones.configure("W.TButton", background='black',
                         foreground='white', relief="flat", padding=6, width=12)
-        style.map("W.TButton",
+        estilo_botones.map("W.TButton",
                   foreground=[('pressed', 'yellow'), ('active', 'white')],
                   background=[('pressed', '!disabled', 'black'),
                               ('active', 'black')]
                   )
-        
+
+        self.option_add('*TkFDialog*foreground', 'darkblue')
+        self.option_add('*TkChooseDir*foreground', 'darkblue')
+        estilo_dialog = ttk.Style(self)
+        estilo_dialog.configure('.', foreground='darkblue')
+
+        default_font = tkFont.nametofont("TkDefaultFont")
+        default_font.configure(family="Helvetica",size=15,weight="bold")
+
+    def crear_componentes_reproductor(self):
         # asignar Botones a frame
         self.btn_forget = tk.Button(
             self.frame_btn, text="Ocultar", command=self.ocultar_lista)
@@ -110,45 +129,36 @@ class VentanaPrincipal(tk.Frame):
         self.btn_pause = ttk.Button(
             self.frame_btn, text="Pause", command=self.Pause, style='W.TButton')
 
-
         self.btn_play.grid(column=2, row=2)
         self.btn_next.grid(column=3, row=2)
         self.btn_previous.grid(column=1, row=2)
         self.btn_pause.grid(column=2, row=3)
         self.btn_forget.grid(column=3, row=3)
 
-
     def mostrar_lista(self):
         self.btn_Recover.grid_remove()
         self.btn_forget.grid(column=3, row=3)
         self.frame_track.grid()
-        
-    
+
     def ocultar_lista(self):
         self.btn_forget.grid_remove()
         self.btn_Recover.grid(column=3, row=3)
         self.frame_track.grid_remove()
-        
-
-        
 
     def componentes_listado_track(self):
 
-        # TODO:Ver para que servia esta linea -- creo que era para actualizar la ventana con el objecivo de mover al lorito.
-
-        
-       
-        # listado para las pistas
+        # definición 
         self.listbox = tk.Listbox(self.frame_track, relief="flat")
-        self.listbox.bind('<<ListboxSelect>>', self.recuperar)
-        self.listbox.configure( width=50)
-        self.listbox.grid(column=0, row=0 )
-
-        # parte de scroll
         self.scroll = tk.Scrollbar(self.frame_track, orient=tk.VERTICAL)
+        self.listbox.bind('<Double-1>', self.seleccionar_pista)
+
+        #grid
+        self.listbox.grid(column=0, row=0)
+        self.scroll.grid(column=1, row=0, sticky="NS")
+
+        #configure
+        self.listbox.configure(width=50, selectmode=tk.SINGLE)
         self.scroll.configure(command=self.listbox.yview)
-        self.scroll.grid(column=1, row=0  , sticky="NS")
-        
 
     def update_frame(self, ind):
         frame = self.frames[ind]
@@ -175,24 +185,21 @@ class VentanaPrincipal(tk.Frame):
 
         self.after(1000, self.update_time, num)
 
-    # TODO:Mejorar este metodo
+    
+
     def abrir_archivo(self):
 
-        ruta_prueba = os.getcwd()
-        archivo_abierto = filedialog.askopenfilenames(initialdir=ruta_prueba,
-        title="Selecione un archivo", 
-        filetypes=(("audio files", ("*.mp3", "*.wav")), ("wav files", "*.wav"), ("all files", "*.*")))
+        # estilo para filedialog       
+        archivo_abierto = None
+        archivo_abierto = filedialog.askopenfilenames(master=self,
+                                                      title="Selecione un archivo",
+                                                      filetypes=(("audio files", ("*.mp3", "*.wav")), ("wav files", "*.wav"), ("all files", "*.*")))
 
-        self.reproductor.stop_music()
-        self.reproductor.add_track(archivo_abierto)
-        pista = self.reproductor.llamar_pista(self.reproductor.posicion_lista)
-        self.reproductor.load_music(pista)
-        self.label_titulo.config(text=self.reproductor.get_titulo())
+        self.listado_pista.extend(list(archivo_abierto))
 
-        print("Titulo de la pista", self.reproductor.get_titulo())
-        self.list_track()
+        self.agregar_pista()
 
-    def cambiar(self, event):
+    def combinacion_teclas(self, event):
 
         if event.keysym == "o":
             self.abrir_archivo()
@@ -201,6 +208,7 @@ class VentanaPrincipal(tk.Frame):
         self.reproductor.play_music()
 
     def siguiente(self):
+
         self.reproductor.siguiente()
         self.label_titulo.config(text=self.reproductor.get_titulo())
 
@@ -211,27 +219,17 @@ class VentanaPrincipal(tk.Frame):
     def Pause(self):
         self.reproductor.pause_music()
 
-    def mostrar_nombre(self):
-        pass
+    def agregar_pista(self):
+        self.listbox.delete(0, tk.END)
+        for idx, val in enumerate(self.listado_pista):
+            self.listbox.insert(idx, os.path.split(val)[1])
 
-    def list_track(self):
-
-        n = 1
-        # self.listbox = tk.Listbox(self.frame_track, relief="flat")
-        # self.listbox.bind('<<ListboxSelect>>', self.recuperar)
-
-        # self.listbox.grid(column=1, row=0)
-        for i in self.reproductor.list_track:
-            n = n + 1
-            self.listbox.insert(n, os.path.split(i)[1])
-
-    def recuperar(self, event):
+    def seleccionar_pista(self, event):
 
         if len(self.listbox.curselection()) != 0:
-           # self.label_titulo.configure(text=self.listbox.get(self.listbox.curselection()[0]))
-            numero = self.listbox.curselection()[0]
-            print("numero pista", numero)
-            pista = self.reproductor.llamar_pista(numero)
-            print("nombre la pista", pista)
-            self.reproductor.load_music(pista)
-            self.label_titulo.config(text=self.reproductor.get_titulo())
+
+            idx_seleccionado = self.listbox.curselection()[0]
+            pista = self.listbox.get(idx_seleccionado)
+            print(pista)
+            self.set_titulo(pista)
+            

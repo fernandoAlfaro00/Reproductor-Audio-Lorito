@@ -12,10 +12,8 @@ if __name__ == "__main__":
     reproductor = Reproductor()
     
     print(Fore.GREEN+"Empezando ejecución")
-    app = VentanaPrincipal(master=root)
+    app = VentanaPrincipal(master=root, rep=reproductor)
     root.title("Reproductor Lorito")
-    root.configure(bg="white")
-    print(Fore.RED+"Termino la ejecución")
-    
+    root.configure(bg="white")   
     app.mainloop()
-    
+    print(Fore.RED+"Termino la ejecución")

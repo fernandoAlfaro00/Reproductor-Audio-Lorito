@@ -10,7 +10,6 @@ class Reproductor():
     def __init__(self):
         self.mix = pygame.mixer  
         self.music = self.mix.music
-        
         self.mix.init()
         self.pause = False
         self.music_pause = "audio_reproductor/mario_bros_paused.wav"
@@ -31,16 +30,19 @@ class Reproductor():
     def load_music(self,track):
         self.music.load(track)
         self.set_titulo(track)
+        
+        
 
         
         
 
     def play_music(self):
 
-        if self.pause == True:
+        if self.pause :
             self.music.unpause()
-            self.sound.stop()
+            self.pause  = False
             return
+
 
         self.music.play()
         
@@ -48,9 +50,9 @@ class Reproductor():
     def  pause_music(self):
 
         self.music.pause()
-        self.pause =  not self.pause
-        print(self.pause)
-        self.sound.play()
+        self.pause =  True
+        
+        
         
         
 
@@ -117,25 +119,7 @@ class Reproductor():
         return ""
 
 
-    def siguiente(self):
-        
-        if self.posicion_lista < len(self.list_track)-1:
-            self.posicion_lista =  self.posicion_lista + 1
-            pista = self.llamar_pista(self.posicion_lista)
-            self.load_music(pista)
-            
 
-            
-            
-
-        
-    def anterior(self):
-        
-        if self.posicion_lista > 0 :
-            self.posicion_lista =  self.posicion_lista - 1
-            pista = self.llamar_pista(self.posicion_lista)
-            self.load_music(pista)
-            
            
 
 

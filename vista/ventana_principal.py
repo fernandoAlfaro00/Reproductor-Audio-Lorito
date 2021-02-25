@@ -1,21 +1,20 @@
 import os
 import tkinter as tk
+from tkinter import filedialog, ttk
 import tkinter.font as tkFont
-from tkinter.constants import CENTER, LEFT, OUTSIDE, RIGHT
-from tkinter import BooleanVar, Frame, StringVar, filedialog, ttk
-from mutagen.wave import WAVE
+from mutagen import MutagenError , wave , oggvorbis
 import reproductor
+import pygame
 
 
 class VentanaPrincipal(tk.Frame):
-
     def __init__(self, master=None, rep=None):
 
         super().__init__(master)
         self.master = master
-        self.configure(background='white')
+        self.configure(background="white")
         self.grid(padx=8, pady=8)
-
+        self.photoimages = {}
         self.crear_componentes()
         self.dar_estilo()
         self.reproductor = rep
@@ -23,14 +22,20 @@ class VentanaPrincipal(tk.Frame):
         self.listado_pista = []
         self.nombre_pista = ""
 
-    def set_titulo(self, texto):
+    def set_titulo(self, texto: str):
+        """[summary]
 
+        Args:
+            texto (str): [description]
+        """
         self.nombre_pista = texto
         self.label_titulo.config(text=self.nombre_pista)
 
-    def set_tiempo(self, texto):
-
-        self.label_time.config(text=texto)
+    def set_tiempo(self, segundo):
+       
+        m, s = divmod(segundo, 60)
+        m, s = int(m), int(s)
+        self.label_time.config(text=f"{m:02}:{s:02}")
 
     def set_duration(self, texto):
 
@@ -41,10 +46,9 @@ class VentanaPrincipal(tk.Frame):
         self.menubar = tk.Menu(self.master)
         self.opciones = tk.Menu(self.menubar, tearoff=0)
         self.master.config(menu=self.menubar)
-        self.opciones.add_command(label="Abrir audio",
-                                  command=self.abrir_archivo,
-                                  accelerator="Ctrl+O"
-                                  )
+        self.opciones.add_command(
+            label="Abrir audio", command=self.abrir_archivo, accelerator="Ctrl+O"
+        )
         self.menubar.add_cascade(label="Abrir", menu=self.opciones)
         self.bind_all("<Control-o>", self.combinacion_teclas)
 
@@ -54,6 +58,15 @@ class VentanaPrincipal(tk.Frame):
 
     def crear_componentes(self):
 
+        icons_names = [
+            'icon_next', 'icon_previous', 'icon_play', 'icon_pause', 'icon_stop', 'icon_recover', 'icon_altavoz']
+
+        files = [
+            r"icons/icons8-fin-24.png", r"icons/icons8-saltar-a-inicio-24.png", r"icons/icons8-play-24.png", r"icons/icons8-pausa-24.png", r"icons/icons8-detener-24.png", r"icons/icons8-lista-de-transacciones-24.png", r"icons/icons8-altavoz-24.png"
+        ]
+
+        self.set_icons(icons_names, files)
+
         self.crear_menu()
 
         # Creación de frame y elemento padres(?
@@ -62,12 +75,8 @@ class VentanaPrincipal(tk.Frame):
         self.frame_track = tk.Frame(self, bg="lightblue")
         self.label_img = tk.Label(self)
         self.frame_control = tk.Frame(self)
-        self.frame_volumen = tk.Frame(self )
-        self.frame_timeline =  tk.Frame(self)
-
-        self.frame_volumen.place( y=325, x=371)
-
-       
+        self.frame_volumen = tk.Frame(self)
+        self.frame_timeline = tk.Frame(self)
 
         # grid
         self.label_img.grid(column=0, row=0)
@@ -75,26 +84,28 @@ class VentanaPrincipal(tk.Frame):
         self.frame_control.grid(column=0, row=2, sticky="WE")
         self.frame_info.grid(column=0, row=3)
         self.frame_btn.grid(column=0, row=4)
-        self.frame_track.grid(column=1, row=0, sticky='N', rowspan=3)
+        self.frame_track.grid(column=1, row=0, sticky="N", rowspan=3)
         # configure
         self.frame_info.configure(width=400, height=10, background="blue")
         self.frame_btn.configure(background="yellow", width=400, height=50)
         self.label_img.configure(width=400, height=400)
-        
 
         self.label_time = tk.Label(self.frame_info, text="--:--")
         self.label_duration = tk.Label(self.frame_info, text="--:--")
 
         self.label_titulo = tk.Label(
-            self.frame_info, justify="left", width=40,  text='----')
+            self.frame_info, justify="left", width=40, text="----"
+        )
         self.label_titulo.grid(row=0, column=0, columnspan=3)
 
+        self.frame_volumen.place(y=325, x=371)
         self.label_time.grid(row=1, column=0)
         self.label_duration.grid(row=1, column=1)
-       
+
         self.volumen = tk.DoubleVar()
-        self.label_vol = ttk.Label(
-            self, text="--", textvariable=self.volumen).place(height=50, width=50, rely=0, relx=0.38)
+        self.label_vol = ttk.Label(self, text="--", textvariable=self.volumen).place(
+            height=50, width=50, rely=0, relx=0.38
+        )
 
         self.volumen.set(0.5)
         self.scale_volumen = ttk.Scale(
@@ -102,61 +113,50 @@ class VentanaPrincipal(tk.Frame):
             from_=1.0,
             to=0,
             orient=tk.VERTICAL,
-            ####################
             command=self.cambiar_volumen,
-            variable=self.volumen
-            
-        )
-        
-        self.var_timeline = tk.IntVar() 
-        self.progress_timeline =  ttk.Scale(
-            self.frame_timeline
-            ,from_=0
-            ,to=3000
-            ,orient=tk.HORIZONTAL
-            ,variable=self.var_timeline
-            ,length=400
-            ,command=self.soymanco
-            
+            variable=self.volumen,
         )
 
+        self.var_timeline = tk.IntVar()
+        self.progress_timeline = ttk.Scale(
+            self.frame_timeline,
+            from_=0,
+            to=3000,
+            orient=tk.HORIZONTAL,
+            variable=self.var_timeline,
+            length=400,
+            command=self.soymanco,
+        )
 
-        
+        self.progress_timeline.grid(row=0, column=0)
 
-        self.progress_timeline.grid(row=0 , column=0)
+        self.estado_volumen = tk.BooleanVar(value=True)
 
-        
-   
-        icon_altavoz = tk.PhotoImage(file=r"icons/icons8-altavoz-24.png")
+        self.btn_volumen = tk.Button(
+            self.frame_info, image=self.photoimages['icon_altavoz'], command=self.muted
+        )
 
-        self.estado_volumen = BooleanVar(value=True)
+        self.frame_volumen.bindtags(self.btn_volumen.bindtags())
+        self.frame_volumen.bind_class(
+            self.btn_volumen, "<Motion>", self.recover_slice)
+        self.frame_volumen.bind_class(
+            self.btn_volumen, "<Leave>", self.forget_slice)
 
-        self.btn_volumen = tk.Button(self.frame_info, image=icon_altavoz , command=self.muted )
-        
+        self.btn_volumen.grid(
+            row=1, column=2, sticky="E", ipadx=2, ipady=2, padx=(0, 10)
+        )
 
+        self.btn_volumen.image = self.photoimages['icon_altavoz']
 
-        self.frame_volumen.bindtags( self.btn_volumen.bindtags())
-        self.frame_volumen.bind_class( self.btn_volumen , '<Motion>', self.recover_slice)
-        self.frame_volumen.bind_class( self.btn_volumen,'<Leave>', self.forget_slice)
-       
-       
-        self.btn_volumen.grid(row=1 , column=2 ,sticky="E" , ipadx=2, ipady=2, padx=(0,10))
-
-        self.btn_volumen.image = icon_altavoz
-        
         print(self.frame_volumen.bindtags())
-        # self.progressbar = ttk.Progressbar(
-        #     self.frame_control,
-        #     orient=tk.HORIZONTAL,
-        #     mode="indeterminate"
-
-        # ).grid(row=0 , column=0 , sticky="EW")
 
         self.frame_control.grid_columnconfigure(0, weight=1)
 
-        # imagen
-        self.frames = [tk.PhotoImage(
-            file='imagenes/nofunciona.gif', format='gif -index %i' % (i)) for i in range(40)]
+        self.frames = [
+            tk.PhotoImage(file="imagenes/nofunciona.gif",
+                          format="gif -index %i" % (i))
+            for i in range(40)
+        ]
 
         # de nuevo un after -- era para tiempo pero no se implemento
         self.after(0, self.update_time)
@@ -168,114 +168,140 @@ class VentanaPrincipal(tk.Frame):
 
         self.crear_componentes_reproductor()
         self.componentes_listado_track()
-    def soymanco(self , event):
 
-        value  = int(event)
-    
-        
-        print("Soy manco test", event)
-        
+    def soymanco(self, event):
+
+     
+        value =  float(event)
+        self.reproductor.music.set_pos(value)
+
+       
+
+
     def muted(self):
-        
-        if self.estado_volumen.get() :
 
-            imagen2 = tk.PhotoImage(file=r'icons/icons8-silencio-24.png')
+        if self.estado_volumen.get():
+
+            imagen2 = tk.PhotoImage(file=r"icons/icons8-silencio-24.png")
             self.btn_volumen.config(image=imagen2)
             self.volumen.set(0)
             self.estado_volumen.set(False)
             self.btn_volumen.image = imagen2
-            
+
         else:
-            
-            imagen1 = tk.PhotoImage(file=r'icons/icons8-altavoz-24.png')
+
+            imagen1 = tk.PhotoImage(file=r"icons/icons8-altavoz-24.png")
             self.btn_volumen.config(image=imagen1)
             self.btn_volumen.image = imagen1
             self.estado_volumen.set(True)
             self.volumen.set(0.5)
-            
-        print(self.estado_volumen.get())
+
+        self.cambiar_volumen()
 
     def recover_slice(self, event=None):
-        
-        
-        self.scale_volumen.pack(side='top',fill='none' )
-        
 
+        self.scale_volumen.pack(side="top", fill="none")
 
     def forget_slice(self, event=None):
         self.scale_volumen.pack_forget()
-       
-       
 
-   
+    def cambiar_volumen(self, event=None):
 
-    def cambiar_volumen(self, event):
-
-        
-        value = round(self.volumen.get(),1)
+        value = round(self.volumen.get(), 1)
         self.volumen.set(value)
 
         self.reproductor.music.set_volume(value)
-
+        
 
     def dar_estilo(self):
 
         # Estilo de los botones
         estilo_botones = ttk.Style()
 
-        estilo_botones.configure("W.TButton", background='black',
-                                 foreground='white', relief="flat", padding=6, width=12)
-        estilo_botones.map("W.TButton",
-                           foreground=[('pressed', 'yellow'),
-                                       ('active', 'white')],
-                           background=[('pressed', '!disabled', 'black'),
-                                       ('active', 'black')]
-                           )
+        estilo_botones.configure(
+            "W.TButton",
+            background="black",
+            foreground="white",
+            relief="flat",
+            padding=6,
+            width=12,
+        )
+        estilo_botones.map(
+            "W.TButton",
+            foreground=[("pressed", "yellow"), ("active", "white")],
+            background=[("pressed", "!disabled", "black"),
+                        ("active", "black")],
+        )
 
-        self.option_add('*TkFDialog*foreground', 'darkblue')
-        self.option_add('*TkChooseDir*foreground', 'darkblue')
+        self.option_add("*TkFDialog*foreground", "darkblue")
+        self.option_add("*TkChooseDir*foreground", "darkblue")
         estilo_dialog = ttk.Style(self)
-        estilo_dialog.configure('.', foreground='darkblue')
+        estilo_dialog.configure(".", foreground="darkblue")
 
         default_font = tkFont.nametofont("TkDefaultFont")
         default_font.configure(family="Helvetica", size=15, weight="bold")
 
-    def crear_componentes_reproductor(self):
+    def set_icons(self, names: list, files: list):
 
-        icon_next = tk.PhotoImage(file=r"icons/icons8-fin-24.png")
-        icon_previous = tk.PhotoImage(
-            file=r"icons/icons8-saltar-a-inicio-24.png")
-        icon_play = tk.PhotoImage(file=r"icons/icons8-play-24.png")
-        icon_pause = tk.PhotoImage(file=r"icons/icons8-pausa-24.png")
-        icon_stop = tk.PhotoImage(file=r"icons/icons8-detener-24.png")
-        icon_recover = tk.PhotoImage(
-            file=r"icons/icons8-lista-de-transacciones-24.png")
+        if len(names) == len(files):
+
+            self.photoimages = dict(
+                zip(names, map(lambda f: tk.PhotoImage(file=f), files)))
+
+        else:
+            raise Exception("names y files debe tener el mismo tamaño")
+
+    def crear_componentes_reproductor(self):
 
         # asignar Botones a frame
         self.btn_forget = tk.Button(
-            self.frame_btn, text="Ocultar", image=icon_recover, command=self.ocultar_lista, width=100, compound=LEFT)
+            self.frame_btn,
+            text="Ocultar",
+            image=self.photoimages['icon_recover'],
+            command=self.ocultar_lista,
+            width=100,
+            compound=tk.LEFT,
+        )
         self.btn_Recover = tk.Button(
-            self.frame_btn, text="Mostrar", image=icon_recover, command=self.mostrar_lista, width=100, compound=LEFT)
+            self.frame_btn,
+            text="Mostrar",
+            image=self.photoimages['icon_recover'],
+            command=self.mostrar_lista,
+            width=100,
+            compound=tk.LEFT,
+        )
         self.btn_play = tk.Button(
-            self.frame_btn, image=icon_play, command=self.play, width=100 , justify='center')
+            self.frame_btn,
+            image=self.photoimages['icon_play'],
+            command=self.play,
+            width=100,
+            justify="center",
+        )
         self.btn_next = tk.Button(
-            self.frame_btn, image=icon_next,   command=self.siguiente, width=100)
+            self.frame_btn, image=self.photoimages['icon_next'], command=self.siguiente, width=100
+        )
         self.btn_previous = tk.Button(
-            self.frame_btn, image=icon_previous, command=self.anterior, width=100)
+            self.frame_btn, image=self.photoimages['icon_previous'], command=self.anterior, width=100
+        )
         self.btn_pause = tk.Button(
-            self.frame_btn, image=icon_pause, command=self.pause, width=100 , justify='center')
+            self.frame_btn,
+            image=self.photoimages['icon_pause'],
+            command=self.pause,
+            width=100,
+            justify="center",
+        )
 
         self.btn_previous.grid(row=0, column=0, sticky="W")
-        self.btn_play.grid(row=0, column=1 )
+        self.btn_play.grid(row=0, column=1)
         self.btn_pause.grid(row=0, column=1)
         self.btn_next.grid(row=0, column=2, sticky="E")
         self.btn_forget.grid(row=1, column=2, sticky="E")
 
-        self.btn_next.image = icon_next
-        self.btn_previous.image = icon_previous
-        self.btn_pause.image = icon_pause
-        self.btn_play.image = icon_play
-        self.btn_forget.image = icon_recover
+        self.btn_next.image = self.photoimages['icon_next']
+        self.btn_previous.image = self.photoimages['icon_previous']
+        self.btn_pause.image = self.photoimages['icon_pause']
+        self.btn_play.image = self.photoimages['icon_play']
+        self.btn_forget.image = self.photoimages['icon_recover']
 
     def mostrar_lista(self):
         self.btn_Recover.grid_remove()
@@ -293,14 +319,16 @@ class VentanaPrincipal(tk.Frame):
         # definición
         self.listbox = tk.Listbox(self.frame_track, relief="flat")
         self.scroll = tk.Scrollbar(self.frame_track, orient=tk.VERTICAL)
-        self.checkbox = tk.Checkbutton(self.frame_track,
-                                        command=self.auto_reproduccion,
-                                        text="auto reproducción",
-                                        variable=self.checkbox_value)
-        self.listbox.bind('<Double-1>', self.seleccionar_pista)
+        self.checkbox = tk.Checkbutton(
+            self.frame_track,
+            command=self.auto_reproduccion,
+            text="auto reproducción",
+            variable=self.checkbox_value,
+        )
+        self.listbox.bind("<Double-1>", self.seleccionar_pista)
 
         # grid
-        self.listbox.grid(row=0, column=0, pady=5, sticky='ns')
+        self.listbox.grid(row=0, column=0, pady=5, sticky="ns")
 
         self.scroll.grid(row=0, column=1, pady=5, sticky="ns")
         self.checkbox.grid(row=1, column=0)
@@ -309,7 +337,7 @@ class VentanaPrincipal(tk.Frame):
         self.scroll.configure(command=self.listbox.yview)
 
     def auto_reproduccion(self):
-
+        print(self.checkbox_value.get())
         if self.checkbox_value.get():
 
             self.after_id = self.after(1000, self.update_autoplay)
@@ -319,7 +347,7 @@ class VentanaPrincipal(tk.Frame):
 
     def update_autoplay(self):
 
-        if self.reproductor.music.get_busy() == False:
+        if not self.reproductor.music.get_busy():
             self.siguiente()
         self.after(1000, self.update_autoplay)
 
@@ -331,7 +359,7 @@ class VentanaPrincipal(tk.Frame):
             # creo que era para que llegara solo 40 frame del gif
             if ind >= 40:
                 ind = 0
-        self.label_img.configure(image=frame, bd=0, bg='#75ac44')
+        self.label_img.configure(image=frame, bd=0, bg="#75ac44")
 
         self.after(50, self.update_frame, ind)
 
@@ -340,22 +368,18 @@ class VentanaPrincipal(tk.Frame):
 
         if self.reproductor.music.get_busy():
 
-            pos_time = self.reproductor.music.get_pos()
+            self.var_timeline.set(self.var_timeline.get()+1)
+            
 
-            s = pos_time // 1000
-            m, s = divmod(s, 60)
-            m, s = int(m), int(s)
-
-            self.set_tiempo(f"{m:02}:{s:02}")
-            self.var_timeline.set(s)
-
-            print("Tiempo de timeline" , self.var_timeline.get())
-
+            self.set_tiempo(self.var_timeline.get())
+            
+ 
+            print("Tiempo var timeline ", self.var_timeline.get())
         else:
 
             num = 0
 
-        self.after(500, self.update_time)
+        self.after(1000, self.update_time)
 
     def update_titulo(self, idx):
 
@@ -378,13 +402,20 @@ class VentanaPrincipal(tk.Frame):
         archivo_abierto = None
         try:
 
-            archivo_abierto = filedialog.askopenfilenames(master=self, initialdir=open('.my_script_lastdir').read(),
-                                                          title="Selecione un archivo",
-
-                                                          filetypes=(("audio files", ("*.mp3", "*.wav")), ("wav files", "*.wav"), ("all files", "*.*")))
+            filetypes = (
+                ("audio files", ("*.mp3", "*.wav")),
+                ("wav files", "*.wav"),
+                ("all files", "*.*"),
+            )
+            archivo_abierto = filedialog.askopenfilenames(
+                master=self,
+                initialdir=open(".my_script_lastdir").read(),
+                title="Selecione un archivo",
+                filetypes=filetypes,
+            )
             if archivo_abierto:
 
-                with open('.my_script_lastdir', 'w') as f:
+                with open(".my_script_lastdir", "w") as f:
                     f.write(os.path.split(archivo_abierto[-1])[0])
                 self.agregar_pista(archivo_abierto)
         except Exception as ex:
@@ -406,7 +437,7 @@ class VentanaPrincipal(tk.Frame):
         self.btn_play.grid()
 
     def siguiente(self):
-        if self.idx_pista < self.listbox.size()-1:
+        if self.idx_pista < self.listbox.size() - 1:
             self.listbox.selection_clear(self.idx_pista)
             self.idx_pista = self.idx_pista + 1
             self.listbox.selection_set(self.idx_pista)
@@ -423,7 +454,7 @@ class VentanaPrincipal(tk.Frame):
 
         self.listado_pista.extend(list(pistas))
 
-        lista = (len(self.listado_pista)-1) - (len(pistas) - 1)
+        lista = (len(self.listado_pista) - 1) - (len(pistas) - 1)
         self.listbox.delete(0, tk.END)
         for idx, val in enumerate(self.listado_pista):
             self.listbox.insert(idx, os.path.split(val)[1])
@@ -440,14 +471,26 @@ class VentanaPrincipal(tk.Frame):
 
             self.set_titulo(pista)
             self.reproductor.load_music(self.listado_pista[self.idx_pista])
-            song = WAVE(self.listado_pista[self.idx_pista])
-            songLength = song.info.length
+            song = ""
+            songLength = "" 
+            try:
+                song = wave.WAVE(self.listado_pista[self.idx_pista])
+                songLength = song.info.length
+            except MutagenError:
+                print ("error")
+
+            try:
+                song = oggvorbis.OggVorbis(self.listado_pista[self.idx_pista])
+                songLength = song.info.length
+            except MutagenError:
+                print ("error")
 
             m, s = divmod(songLength, 60)
             m, s = int(m), int(s)
             print(songLength)
             print(f"{m:02}:{s:02}")
-            self.progress_timeline['to'] = songLength
-            print("Tiempo de duración" ,  self.progress_timeline['to'])
+            self.progress_timeline["to"] = songLength
+            print("Tiempo de duración", self.progress_timeline["to"])
             self.set_duration(f"{m:02}:{s:02}")
+            self.var_timeline.set(0)
             self.play()

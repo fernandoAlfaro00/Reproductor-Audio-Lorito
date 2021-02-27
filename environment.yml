@@ -1,0 +1,43 @@
+name: pygame
+channels:
+  - defaults
+dependencies:
+  - _libgcc_mutex=0.1=main
+  - appdirs=1.4.4=py_0
+  - attrs=20.3.0=pyhd3eb1b0_0
+  - autopep8=1.5.4=py_0
+  - black=19.10b0=py_0
+  - ca-certificates=2021.1.19=h06a4308_0
+  - certifi=2020.12.5=py38h06a4308_0
+  - click=7.1.2=pyhd3eb1b0_0
+  - colorama=0.4.4=pyhd3eb1b0_0
+  - ld_impl_linux-64=2.33.1=h53a641e_7
+  - libedit=3.1.20191231=h14c3975_1
+  - libffi=3.3=he6710b0_2
+  - libgcc-ng=9.1.0=hdf63c60_0
+  - libstdcxx-ng=9.1.0=hdf63c60_0
+  - mypy=0.812=pyhd3eb1b0_0
+  - mypy_extensions=0.4.3=py38_0
+  - ncurses=6.2=he6710b0_1
+  - openssl=1.1.1j=h27cfd23_0
+  - pathspec=0.7.0=py_0
+  - pip=20.3.3=py38h06a4308_0
+  - psutil=5.8.0=py38h27cfd23_1
+  - pycodestyle=2.6.0=py_0
+  - python=3.8.5=h7579374_1
+  - readline=8.0=h7b6447c_0
+  - regex=2020.11.13=py38h27cfd23_0
+  - setuptools=51.0.0=py38h06a4308_2
+  - sqlite=3.33.0=h62c20be_0
+  - tk=8.6.10=hbc83047_0
+  - toml=0.10.1=py_0
+  - typed-ast=1.4.2=py38h27cfd23_1
+  - typing_extensions=3.7.4.3=pyha847dfd_0
+  - wheel=0.36.2=pyhd3eb1b0_0
+  - xz=5.2.5=h7b6447c_0
+  - zlib=1.2.11=h7b6447c_3
+  - pip:
+    - mutagen==1.45.1
+    - pygame==2.0.1
+    - pyglet==1.5.15
+prefix: /home/Akira_Genocyber/miniconda3/envs/pygame

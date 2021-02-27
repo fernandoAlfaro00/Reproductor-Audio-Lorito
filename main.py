@@ -1,8 +1,7 @@
 import tkinter as tk
-from colorama import  init , Fore
+from colorama import init, Fore
 from vista.ventana_principal import VentanaPrincipal
-from  reproductor.audio import Reproductor
-
+from reproductor.audio import Reproductor
 
 
 if __name__ == "__main__":
@@ -10,10 +9,11 @@ if __name__ == "__main__":
     init()
 
     reproductor = Reproductor()
-    
-    print(Fore.GREEN+"Empezando ejecución")
+
+    print(Fore.GREEN + "Empezando ejecución")
     app = VentanaPrincipal(master=root, rep=reproductor)
+    root.resizable(False, False)
+
     root.title("Reproductor Lorito")
-    root.configure(bg="white")   
     app.mainloop()
-    print(Fore.RED+"Termino la ejecución")
+    print(Fore.RED + "Termino la ejecución")

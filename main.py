@@ -12,6 +12,8 @@ if __name__ == "__main__":
 
     print(Fore.GREEN + "Empezando ejecución")
     app = VentanaPrincipal(master=root, rep=reproductor)
+    root.resizable(False, False)
+
     root.title("Reproductor Lorito")
     app.mainloop()
     print(Fore.RED + "Termino la ejecución")
